@@ -25,8 +25,10 @@ To utilize this pipeline template, follow these steps:
    - In the application code repository, set up a release branch (manually or automatic by script) in semantic versioning `release/vX.Y.Z` which triggers the CI pipeline and generates a version number. Succesfully finished pipeline CI should trigget pipeline CD (point 3)
 
 3. **Configure the Versioning Pipeline**:
-   - In the infrastructure repository, create a pipeline file (e.g., `azure-pipelines.yml`) which reference the `base/cd.yml` pipeline template.  Add the following triggering mechanism to your pipeline:
+   - In the infrastructure repository, create a pipeline file (e.g., `azure-pipelines.yml`) which reference the `base/cd.yml` pipeline template. Add the triggering mechanism by different pipeline (CI) to your main CD pipeline.
 
+
+**Main Pipeline Example**
    ```yaml
    resources:
      pipelines:
@@ -39,3 +41,12 @@ To utilize this pipeline template, follow these steps:
              - release/*
            stages:
            - ci
+    repositories:
+     - repository: self
+        trigger: none
+     - repository: templates
+       type: git
+       name: My-Templates-Repository
+
+extands:
+  template: base/cd.yml@templates
