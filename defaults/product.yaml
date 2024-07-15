@@ -1,0 +1,4 @@
+image:
+  name: namespace/my-app-container-image
+  tag: v1.0.0
+  infra: 0

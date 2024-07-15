@@ -1,0 +1,23 @@
+parameters:
+- name: stage
+  type: object
+
+resources:
+  repositories:
+  - repository: self
+  containers:
+  - container: python
+    image: python:3.10
+
+variables:
+- name: versioning
+  ${{ if or(and(in(variables['Build.Reason'], 'Manual'), startsWith(variables['Build.SourceBranch'], 'refs/tags/')), startsWith(variables['Build.SourceBranch'], 'refs/heads/feature') ) }}:
+    value: false
+  ${{ else }}:
+    value: true
+
+stages:
+- ${{ if eq(variables.versioning, true) }}:
+  - template: ../versioning/versioning.yml
+    parameters:
+      pool: my-pool
