@@ -1,3 +1,23 @@
 parameters:
   name: pool
   type: string
+
+stages:
+- stage: version
+  displayName: set version
+  variables:
+  - name: source
+    value: $[variables['resources.pipeline.ci.sourceBranch']]
+  - name: version
+    value: $[replace(variables.source, 'refs/heads/release/', '' )]
+  - name: infraVersion
+    value: $[counter(variables.version, 0)]
+  jobs:
+  - job: set_build_number
+    displayName: Set build number
+    pool: ${{ parameters.pool }}
+    steps:
+    - script: echo "##vso[build.updatebuildnumber]$(version)-$(infraVersion)"
+    - bash:  echo "##vso[task.setvariable variable=tagVersion;isOutput=true]$(version)-$(infraVersion)"
+      name: VersionStageTag
+    - bash: echo '$(version)-$(infraVersion)'
