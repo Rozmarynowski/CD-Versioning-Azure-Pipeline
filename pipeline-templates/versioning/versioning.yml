@@ -21,3 +21,35 @@ stages:
     - bash:  echo "##vso[task.setvariable variable=tagVersion;isOutput=true]$(version)-$(infraVersion)"
       name: VersionStageTag
     - bash: echo '$(version)-$(infraVersion)'
+  - job: commit_version
+    displayName: Commit Version
+    dependsOn: set_build_number
+    pool: ${{ parameters.pool }}
+    variables:
+      PYTHONUSERBASE: $(Pipeline.Workspace)
+    steps:
+    - checkout: self
+      persistCredentials: true
+      clean: true
+    - script: |
+        git fetch origin main
+        git checkout origin/main
+      displayName: git fetch
+    - script: |
+        python -m pip install yaml-patch
+        $(PYTHONUSERBASE)/bin/yaml-patch -f defaults/product.yaml image.tag='$(version)' > tmp.yaml && mv tmp.yaml defaults/product.yaml
+        $(PYTHONUSERBASE)/bin/yaml-patch -f defaults/product.yaml image.infra='$(infraVersion)' > tmp.yaml && mv tmp.yaml defaults/product.yaml
+        cat defaults/product.yaml
+      target: python
+      displayName: tag patch
+    - script: |
+        git config user.email "email"
+        git config user.name "Ubuntu"
+        git add .
+        git commit -m "Bump version" -m "skip-checks: true"
+        git push origin HEAD:main
+
+        git tag -am '$(version)-$(infraVersion)' '$(version)-$(infraVersion)'
+        git push --force --tags
+      displayName: git commit
+  condition: and(or(in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI', 'ResourceTrigger'), and(in(variables['Build.Reason'], 'Manual'), startsWith(variables['Build.SourceBranch'], 'refs/heads/main'))), ne(variables['resources.pipeline.ci.sourceBranch'], 'refs/heads/main'))
